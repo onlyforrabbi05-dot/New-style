@@ -14,133 +14,29 @@
             flex-direction: column;
             align-items: center;
         }
-        h1 { color: #0088cc; margin-bottom: 5px; }
-        .subtitle { color: #666; margin-bottom: 25px; font-size: 14px; }
-        #feed {
+        h1 {
+            color: #0088cc;
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        p.subtitle {
+            color: #666;
+            margin-bottom: 25px;
+            font-size: 14px;
+            text-align: center;
+        }
+        #feed-container {
             width: 100%;
             max-width: 600px;
             display: flex;
             flex-direction: column;
             gap: 15px;
         }
-        /* প্রতিটি পোস্টের সুন্দর ডিজাইন */
-        .tg-card {
-            background: white;
-            padding: 20px;
+        /* টেলিগ্রাম পোস্টের চারপাশের সুন্দর ফ্রেম */
+        iframe {
+            border: none !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
             border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            word-wrap: break-word;
-        }
-        .tg-card img, .tg-card video {
-            width: 100%;
-            border-radius: 8px;
-            margin-top: 10px;
-            max-height: 400px;
-            object-fit: cover;
-        }
-        .tg-time {
-            font-size: 11px;
-            color: #aaa;
-            margin-top: 15px;
-            text-align: right;
-        }
-        .error-msg {
-            background: #ffebe9;
-            color: #ff3b30;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            width: 100%;
-            max-width: 570px;
-        }
-    </style>
-</head>
-<body>
-
-    <h1>📢 Telegram Channel Live Feed</h1>
-    <p class="subtitle">চ্যানেল থেকে সরাসরি ডাটা লোড হচ্ছে...</p>
-
-    <div id="feed">
-        <div class="tg-card"><p style="text-align:center; color:#888;">লোড হচ্ছে, দয়া করে অপেক্ষা করুন...</p></div>
-    </div>
-
-    <script>
-        // 🚨 এখানে আপনার চ্যানেলের সঠিক নাম দিন
-        const channelName = "YOUR_CHANNEL_USERNAMErabbi"; 
-
-        async function fetchTelegramFeed() {
-            const feedContainer = document.getElementById('feed');
-            try {
-                // টেলিগ্রামের পাবলিক প্রিভিউ পেজ থেকে ডাটা স্ক্র্যাপ করা (CORS Bypass সহ)
-                const response = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent('https://t.me/s/' + channelName)}`);
-                const data = await response.json();
-                
-                // HTML পার্স করা
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(data.contents, 'text/html');
-                
-                // টেলিগ্রামের পোস্টের ক্লাসের নাম ধরে ডাটা নেওয়া
-                const messages = doc.querySelectorAll('.tgme_widget_message_wrap');
-                
-                if(messages.length === 0) {
-                    feedContainer.innerHTML = `<div class="error-msg">কোনো পোস্ট পাওয়া যায়নি! আপনার চ্যানেলটি 'Public' করা আছে তো? অথবা ইউজারনেমটি চেক করুন।</div>`;
-                    return;
-                }
-
-                feedContainer.innerHTML = ''; // লোডিং টেক্সট মুছে ফেলা
-
-                // শেষ ১০টি পোস্ট লুপ করে ওয়েবসাইটে দেখানো
-                let count = 0;
-                for (let i = messages.length - 1; i >= 0; i--) {
-                    if(count >= 10) break; // সর্বোচ্চ ১০টা পোস্ট দেখাবে
-                    
-                    const msg = messages[i];
-                    const card = document.createElement('div');
-                    card.className = 'tg-card';
-
-                    // ১. টেক্সট বা ক্যাপশন নেওয়া
-                    const textNode = msg.querySelector('.tgme_widget_message_text');
-                    let textHtml = textNode ? `<p>${textNode.innerHTML}</p>` : '';
-
-                    // ২. ইমেজ বা ফটো খোঁজা
-                    const photoNode = msg.querySelector('.tgme_widget_message_photo_wrap');
-                    let imgHtml = '';
-                    if (photoNode) {
-                        // ব্যাকগ্রাউন্ড ইমেজ ইউআরএল থেকে মেইন লিংক বের করা
-                        const bgImg = photoNode.style.backgroundImage;
-                        const imgUrl = bgImg.substring(bgImg.indexOf('"') + 1, bgImg.lastIndexOf('"'));
-                        imgHtml = `<img src="${imgUrl}" alt="Telegram Image">`;
-                    }
-
-                    // ৩. ভিডিও খোঁজা
-                    const videoNode = msg.querySelector('.tgme_widget_message_video');
-                    let videoHtml = '';
-                    if (videoNode) {
-                        const videoUrl = videoNode.getAttribute('src');
-                        videoHtml = `<video src="${videoUrl}" controls></video>`;
-                    }
-
-                    // ৪. সময় নেওয়া
-                    const timeNode = msg.querySelector('time');
-                    const timeText = timeNode ? timeNode.innerText : '';
-
-                    // সবকিছু কার্ডে যোগ করা
-                    card.innerHTML = imgHtml + videoHtml + textHtml + `<div class="tg-time">${timeText}</div>`;
-                    feedContainer.appendChild(card);
-                    count++;
-                }
-
-            } catch (error) {
-                console.error("Error fetching feed:", error);
-                feedContainer.innerHTML = `<div class="error-msg">ডাটা লোড করতে সমস্যা হচ্ছে। দয়া করে কিছুক্ষণ পর আবার চেষ্টা করুন।</div>`;
-            }
-        }
-
-        // পেজ লোড হলে ফাংশনটি রান হবে
-        window.onload = fetchTelegramFeed;
-    </script>
-</body>
-</html>            border-radius: 12px;
             background: white;
             width: 100% !important;
         }
@@ -149,15 +45,14 @@
 <body>
 
     <h1>📢 Telegram Channel Live Feed</h1>
-    <p class="subtitle">চ্যানেলে পাঠানো সব টেক্সট, ফটো ও ভিডিও এখানে অটোমেটিক লোড হবে</p>
+    <p class="subtitle">চ্যানেলে পাঠানো সব টেক্সট, ফটো ও ভিডিও এখানে নিচে লোড হবে</p>
 
     <div id="feed-container">
         
-        <!-- টেলিগ্রামের অফিশিয়াল উইজেট যা আপনার চ্যানেল থেকে ডাটা আনবে -->
+        <!-- অফিশিয়াল টেলিগ্রাম প্রিভিউ উইজেট -->
         <script async src="https://telegram.org/js/telegram-widget.js?22" 
-                data-telegram-channel="YOUR_CHANNEL_USERNAMErabbi" 
-                data-width="100%" 
-                data-userpic="true">
+                data-telegram-post="YOUR_CHANNEL_USERNAMErabbi/preview" 
+                data-width="100%">
         </script>
 
     </div>
